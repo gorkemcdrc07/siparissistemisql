@@ -6,13 +6,13 @@ import { fileURLToPath } from 'url'
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const file = join(__dirname, 'db.json')
 const adapter = new JSONFile(file)
-const db = new Low(adapter)
 
-// ✅ BURASI ÖNEMLİ: default data hemen tanımlanmalı
-db.data = { users: [] }
+// 💥 Burada default data atanıyor
+const db = new Low(adapter, { users: [] })  // <-- En önemli satır bu!
 
 await db.read()
 
+// Eğer admin yoksa ekle
 if (!db.data.users.find(u => u.username === 'admin')) {
     db.data.users.push({
         id: 1,
