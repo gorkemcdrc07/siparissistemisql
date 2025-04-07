@@ -1,8 +1,7 @@
-import { JSONFile, Low } from 'lowdb'
+import { Low, JSONFile } from 'lowdb'
 import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
 
-// CommonJS değil, ESM olarak çalıştığı için bu satırlar önemli
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const file = join(__dirname, 'db.json')
 const adapter = new JSONFile(file)
@@ -11,7 +10,6 @@ const db = new Low(adapter)
 await db.read()
 db.data ||= { users: [] }
 
-// Eğer admin yoksa ekle
 if (!db.data.users.find(u => u.username === 'admin')) {
     db.data.users.push({
         id: 1,
