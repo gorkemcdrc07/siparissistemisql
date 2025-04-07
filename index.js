@@ -25,7 +25,7 @@ async function connectToDbAndQuery(query) {
         const result = await sql.query(query);
         return result.recordset;
     } catch (err) {
-        console.error("SQL Hatası:", err);
+        console.error("❌ SQL Hatası:", err); // 🔍 detaylı log
         throw err;
     }
 }
@@ -35,20 +35,21 @@ app.get("/api/login", async (req, res) => {
     try {
         const data = await connectToDbAndQuery("SELECT * FROM Login");
         res.json(data);
-    } catch {
+    } catch (err) {
+        console.error("❌ Login verisi alınamadı:", err); // 👈 log eklendi
         res.status(500).send("Login verisi alınamadı");
     }
 });
 
-// 🆕 🔐 Login kontrolü (formdan gelen kullanıcıyı kontrol et)
+// 🔐 Login kontrolü
 app.post("/api/login", async (req, res) => {
     const { username, password } = req.body;
 
     try {
         await sql.connect(config);
         const result = await sql.query`
-      SELECT * FROM Login 
-      WHERE KullaniciAdi = ${username} AND Sifre = ${password}`;
+            SELECT * FROM Login 
+            WHERE KullaniciAdi = ${username} AND Sifre = ${password}`;
 
         if (result.recordset.length > 0) {
             res.json({ success: true, user: result.recordset[0] });
@@ -56,19 +57,26 @@ app.post("/api/login", async (req, res) => {
             res.status(401).json({ success: false, message: "Kullanıcı adı veya şifre hatalı" });
         }
     } catch (err) {
-        console.error("Login kontrol hatası:", err);
+        console.error("❌ Login kontrol hatası:", err); // 👈 log eklendi
         res.status(500).json({ success: false, message: "Sunucu hatası" });
     }
 });
 
-// 📦 Siparisler tablosu verilerini getir
+// 📦 Siparisler tablosu
 app.get("/api/siparisler", async (req, res) => {
     try {
         const data = await connectToDbAndQuery("SELECT * FROM Siparisler");
         res.json(data);
-    } catch {
+    } catch (err) {
+        console.error("❌ Sipariş verisi alınamadı:", err); // 👈 log eklendi
         res.status(500).send("Sipariş verisi alınamadı");
     }
+});
+
+// Genel express hata yakalayıcı (isteğe bağlı)
+app.use((err, req, res, next) => {
+    console.error("❌ Express global hata:", err.stack);
+    res.status(500).send("Sunucu hatası");
 });
 
 const PORT = process.env.PORT || 5000;
