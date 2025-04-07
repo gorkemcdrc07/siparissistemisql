@@ -8,12 +8,11 @@ const file = join(__dirname, 'db.json')
 const adapter = new JSONFile(file)
 const db = new Low(adapter)
 
-// ✅ BU SATIRI OKUMA ÖNCESİNE AL:
-db.data = { users: [] }  // <--- İŞTE BURASI!
+// ✅ BURASI ÖNEMLİ: default data hemen tanımlanmalı
+db.data = { users: [] }
 
 await db.read()
 
-// ✅ SONRA TEKRAR YAZMA KONTROLÜ
 if (!db.data.users.find(u => u.username === 'admin')) {
     db.data.users.push({
         id: 1,
