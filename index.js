@@ -10,11 +10,12 @@ app.use(express.json());
 const config = {
     user: process.env.DB_USER,
     password: process.env.DB_PASSWORD,
-    server: process.env.DB_HOST,
+    server: process.env.DB_HOST,  // IP ve SQL Server'ınızın adı
     database: process.env.DB_NAME,
     options: {
         encrypt: true,
         trustServerCertificate: true,
+        instanceName: 'SQLEXPRESS', // SQL Server Express için gerekli olan instance adı
     },
 };
 
