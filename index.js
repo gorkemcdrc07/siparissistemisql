@@ -1,84 +1,35 @@
-require("dotenv").config();
-const express = require("express");
-const sql = require("mssql");
-const cors = require("cors");
+const express = require('express');
+const cors = require('cors');
+const bodyParser = require('body-parser');
+const db = require('./db');
 
 const app = express();
+const port = process.env.PORT || 5000;
+
 app.use(cors());
-app.use(express.json());
+app.use(bodyParser.json());
 
-const config = {
-    user: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-    server: process.env.DB_HOST,  // IP ve SQL Server'ınızın adı
-    database: process.env.DB_NAME,
-    options: {
-        encrypt: true,
-        trustServerCertificate: true,
-        instanceName: 'SQLEXPRESS', // SQL Server Express için gerekli olan instance adı
-    },
-};
-
-// Genel bağlantı fonksiyonu
-async function connectToDbAndQuery(query) {
-    try {
-        await sql.connect(config);
-        const result = await sql.query(query);
-        return result.recordset;
-    } catch (err) {
-        console.error("❌ SQL Hatası:", err); // 🔍 detaylı log
-        throw err;
-    }
-}
-
-// 🔐 Login tablosu verilerini getir (tüm kullanıcılar)
-app.get("/api/login", async (req, res) => {
-    try {
-        const data = await connectToDbAndQuery("SELECT * FROM Login");
-        res.json(data);
-    } catch (err) {
-        console.error("❌ Login verisi alınamadı:", err); // 👈 log eklendi
-        res.status(500).send("Login verisi alınamadı");
-    }
-});
-
-// 🔐 Login kontrolü
-app.post("/api/login", async (req, res) => {
+app.post('/api/login', (req, res) => {
     const { username, password } = req.body;
 
-    try {
-        await sql.connect(config);
-        const result = await sql.query`
-            SELECT * FROM Login 
-            WHERE KullaniciAdi = ${username} AND Sifre = ${password}`;
+    db.get(
+        `SELECT * FROM Login WHERE KullaniciAdi = ? AND Sifre = ?`,
+        [username, password],
+        (err, row) => {
+            if (err) {
+                console.error(err);
+                return res.status(500).json({ message: 'Server error' });
+            }
 
-        if (result.recordset.length > 0) {
-            res.json({ success: true, user: result.recordset[0] });
-        } else {
-            res.status(401).json({ success: false, message: "Kullanıcı adı veya şifre hatalı" });
+            if (row) {
+                res.status(200).json({ message: 'Success', user: row });
+            } else {
+                res.status(401).json({ message: 'Invalid credentials' });
+            }
         }
-    } catch (err) {
-        console.error("❌ Login kontrol hatası:", err); // 👈 log eklendi
-        res.status(500).json({ success: false, message: "Sunucu hatası" });
-    }
+    );
 });
 
-// 📦 Siparisler tablosu
-app.get("/api/siparisler", async (req, res) => {
-    try {
-        const data = await connectToDbAndQuery("SELECT * FROM Siparisler");
-        res.json(data);
-    } catch (err) {
-        console.error("❌ Sipariş verisi alınamadı:", err); // 👈 log eklendi
-        res.status(500).send("Sipariş verisi alınamadı");
-    }
+app.listen(port, () => {
+    console.log(`API ${port} portunda çalışıyor.`);
 });
-
-// Genel express hata yakalayıcı (isteğe bağlı)
-app.use((err, req, res, next) => {
-    console.error("❌ Express global hata:", err.stack);
-    res.status(500).send("Sunucu hatası");
-});
-
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`API ${PORT} portunda çalışıyor.`));
