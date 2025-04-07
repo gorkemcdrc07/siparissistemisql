@@ -1,28 +1,26 @@
-const Database = require('better-sqlite3');
-const path = require('path');
+import { JSONFile, Low } from 'lowdb'
+import { join, dirname } from 'path'
+import { fileURLToPath } from 'url'
 
-const dbPath = path.resolve(__dirname, 'database.sqlite');
-const db = new Database(dbPath);
+// CommonJS deðil, ESM olarak çalýþtýðý için bu satýrlar önemli
+const __dirname = dirname(fileURLToPath(import.meta.url))
+const file = join(__dirname, 'db.json')
+const adapter = new JSONFile(file)
+const db = new Low(adapter)
 
-// Tabloyu oluþtur
-db.prepare(`
-  CREATE TABLE IF NOT EXISTS Login (
-    ID INTEGER PRIMARY KEY AUTOINCREMENT,
-    KullaniciAdi TEXT,
-    Sifre TEXT,
-    Yetki TEXT,
-    AdSoyad TEXT
-  )
-`).run();
+await db.read()
+db.data ||= { users: [] }
 
-// Admin yoksa ekle
-const admin = db.prepare(`SELECT * FROM Login WHERE KullaniciAdi = ?`).get('admin');
-
-if (!admin) {
-    db.prepare(`
-    INSERT INTO Login (KullaniciAdi, Sifre, Yetki, AdSoyad)
-    VALUES (?, ?, ?, ?)
-  `).run('admin', '1234', 'Admin', 'Görkem Çadýrcý');
+// Eðer admin yoksa ekle
+if (!db.data.users.find(u => u.username === 'admin')) {
+    db.data.users.push({
+        id: 1,
+        username: 'admin',
+        password: '1234',
+        fullName: 'Görkem Çadýrcý',
+        role: 'Admin'
+    })
+    await db.write()
 }
 
-module.exports = db;
+export default db
