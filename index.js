@@ -12,22 +12,20 @@ app.use(bodyParser.json());
 app.post('/api/login', (req, res) => {
     const { username, password } = req.body;
 
-    db.get(
-        `SELECT * FROM Login WHERE KullaniciAdi = ? AND Sifre = ?`,
-        [username, password],
-        (err, row) => {
-            if (err) {
-                console.error(err);
-                return res.status(500).json({ message: 'Server error' });
-            }
+    try {
+        const row = db.prepare(
+            `SELECT * FROM Login WHERE KullaniciAdi = ? AND Sifre = ?`
+        ).get(username, password);
 
-            if (row) {
-                res.status(200).json({ message: 'Success', user: row });
-            } else {
-                res.status(401).json({ message: 'Invalid credentials' });
-            }
+        if (row) {
+            res.status(200).json({ message: 'Success', user: row });
+        } else {
+            res.status(401).json({ message: 'Invalid credentials' });
         }
-    );
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Server error' });
+    }
 });
 
 app.listen(port, () => {
